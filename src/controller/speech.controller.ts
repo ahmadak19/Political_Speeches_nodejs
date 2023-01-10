@@ -5,7 +5,6 @@ export const speechController: RequestHandler = async (
   req: Request,
   res: Response
 ) => {
-  // console.log(req.query.url)
   const speeches = await speechService.getSpeeches(req.query.url)
   const mostSpeech = speechService.mostSpeeches(speeches, 2013)
   const mostTopic = speechService.mostTopics(speeches, 'Internal Security')

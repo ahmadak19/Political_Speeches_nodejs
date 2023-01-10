@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios'
 import csvParser from 'csv-parser'
-import { Readable, Stream } from 'stream'
+import { Readable } from 'stream'
 import { Speech } from '../types/speech.type'
 import * as https from 'https'
 
@@ -16,24 +16,35 @@ class speechService {
     } else {
       const res: AxiosResponse = await this.fetchCsvFile(urls)
       const speech = await this.parseCsv(res.data)
-
       speeches = [...speech]
     }
 
     return speeches
   }
 
-  fewestWords(speeches: Speech[]) {
-    const min = Object.values(speeches).reduce<number>(
-      (min, current: Speech) => {
-        return Math.min(min, current.Words)
+  fewestWords(speeches: Speech[]): string {
+    let speaker: string = ''
+
+    const wordsCount = speeches.reduce<Record<string, number>>(
+      (allPolitical, speech) => {
+        return {
+          ...allPolitical,
+          [speech.Speaker]: speech.Words + (allPolitical[speech.Speaker] ?? 0),
+        }
       },
-      Number.MAX_SAFE_INTEGER
+      {}
     )
-    const speaker = speeches.find(({ Words }) => Words === min)?.Speaker
+
+    const min = Object.values(wordsCount).reduce<number>((min, current) => {
+      return Math.min(min, current)
+    }, Number.MAX_SAFE_INTEGER)
+
+    for (const key in wordsCount) {
+      if (wordsCount[key] === min) speaker = key
+    }
     return speaker
   }
-  mostTopics(speeches: Speech[], topic: string) {
+  mostTopics(speeches: Speech[], topic: string): string {
     const speaker = speeches
       .filter((speech) => speech.Topic === topic)
       .map((speech) => speech.Speaker)
@@ -53,12 +64,13 @@ class speechService {
         }
       }, {})
 
-    Object.entries(speechesCount).forEach(([political, count]) => {
-      if (count > max) {
-        max = count
+    for (const political in speechesCount) {
+      if (speechesCount[political] > max) {
+        max = speechesCount[political]
         speaker = political
       }
-    })
+    }
+
     return speaker
   }
 

@@ -8,5 +8,5 @@ npm install
 
 starting the app:
 ```bash
-npm run dev
+npm run start
 ```
